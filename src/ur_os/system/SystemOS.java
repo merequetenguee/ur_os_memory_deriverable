@@ -5,19 +5,17 @@
  */
 package ur_os.system;
 
-import ur_os.process.ProcessInstructionType;
-import ur_os.memory.contiguous.SMM_Contiguous;
-import ur_os.memory.Memory;
-import ur_os.memory.MemoryManagerType;
-import ur_os.process.Process;
 import java.util.ArrayList;
 import java.util.Random;
+import ur_os.memory.Memory;
 import ur_os.memory.MemoryInstruction;
+import ur_os.memory.MemoryManagerType;
 import ur_os.memory.MemoryOperationType;
 import ur_os.memory.freememorymagament.FreeMemorySlotManager;
 import ur_os.process.EndInstruction;
 import ur_os.process.IOInstruction;
 import ur_os.process.Instruction;
+import ur_os.process.Process;
 import ur_os.virtualmemory.SwapMemory;
 
 /**

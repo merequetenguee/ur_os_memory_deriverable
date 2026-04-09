@@ -16,10 +16,34 @@ public class BestFitMemorySlotManager extends FreeMemorySlotManager{
     
     @Override
     public MemorySlot getSlot(int size) {
+        System.out.println("\n==============================");
+         System.out.println("BEST FIT -> " + size);
         MemorySlot m = null;
-        //ToDo
+
+       for (MemorySlot slot:list){
+            System.out.println("Slot disponible: " + slot.getSize());
+            if (slot.canContain(size)){
+                if (m == null || slot.getSize() < m.getSize()){
+                    m = slot;
+                }
+            }
+        }
         
-        return m;
+        if (m == null){
+            System.out.println(" No hay espacio suficiente");
+            return null;
+        }
+        
+        System.out.println(" Bloque elegido (debe ser el menor) " + m.getSize());
+        
+        if (m.getSize() == size){
+            list.remove(m);
+            return m;
+        }
+        
+         return m.assignMemory(size);
+        
+       
     }
     
 }

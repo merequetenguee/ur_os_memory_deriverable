@@ -5,8 +5,8 @@
  */
 package ur_os;
 
-import ur_os.system.SystemOS;
 import ur_os.system.SimulationType;
+import ur_os.system.SystemOS;
 
 /**
  *
