@@ -40,6 +40,8 @@ public class SMM_Paging extends SystemMemoryManager{
             if(pa == null){
                 //There was a page fault, so the page needs to be brought to memory from swap
                 
+                System.out.println("[VM][" + OS.PVMM + "] PAGE FAULT - PID: " + pmmp.getProcess().getPid()
+                        + " Requested page: " + la.getDivision());
                 int pageVictim = pmmp.getVictim(); //Find a page that needs to leave memory if there is no space
                 int frameVictimInSwap;
                 
@@ -48,9 +50,11 @@ public class SMM_Paging extends SystemMemoryManager{
                 if(pageVictim == -1){ //If no victim was found because there are still frames available
                     frameVictim = getOS().getFreeFrame(); //Obtain a new free frame to store the page from swap
                     frameVictimInSwap = -1;
+                    System.out.println("[VM][" + OS.PVMM + "] No victim selected - using free frame: " + frameVictim);
                 }else{//If there are no free frames, then a pageVictim was selected
                     frameVictim = pmmp.getFrameMemoryAddressFromLogicalMemoryAddress(pageVictim); //Find the frame number in memory of the victim page
                     frameVictimInSwap = pmmp.getVFrameMemoryAddressFromLogicalMemoryAddress(pageVictim); //Find the frame number in Swap memory of the victim page
+                    System.out.println("[VM][" + OS.PVMM + "] Victim selected - page: " + pageVictim + " in frame: " + frameVictim);
                 }
                 
                 int pageToLoad = la.getDivision(); //Get the pageID of the desired page

@@ -19,10 +19,32 @@ public class PVMM_LFU extends ProcessVirtualMemoryManager{
     
     @Override
     public int getVictim(LinkedList<Integer> memoryAccesses, PageTable pt) {
-        
-        //ToDo
-        
-        return -1;
+         LinkedList<Integer> validPages = new LinkedList();
+        int pageIndex = 0;
+        for (ur_os.memory.paging.PageTableEntry pte : pt.getList()) {
+            if (pte.isValid()) {
+                validPages.add(pageIndex);
+            }
+            pageIndex++;
+        }
+
+        int victim = -1;
+        int minFreq = Integer.MAX_VALUE;
+
+        for (Integer page : validPages) {
+            int freq = 0;
+            for (Integer accessedPage : memoryAccesses) {
+                if (page.equals(accessedPage)) {
+                    freq++;
+                }
+            }
+
+            if (freq < minFreq) {
+                minFreq = freq;
+                victim = page;
+            }
+        }
+
+        return victim;
     }
-    
 }

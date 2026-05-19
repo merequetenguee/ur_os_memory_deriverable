@@ -5,7 +5,6 @@
 package ur_os.memory.segmentation;
 
 import java.util.ArrayList;
-import ur_os.system.SystemOS;
 import java.util.Random;
 import ur_os.memory.MemoryAddress;
 
@@ -86,22 +85,45 @@ public class SegmentTable {
         int segment = -1;
         int offset = -1;
         
-        //Include your code here
+        int accumulated = 0;
+        for (int i = 0; i < segmentTable.size(); i++) {
+            int limit = segmentTable.get(i).getLimit();
+            if (locAdd < accumulated + limit) {
+                segment = i;
+                offset = locAdd - accumulated;
+                break;
+            }
+            accumulated += limit;
+        }
         
         //For Virtual Memory
-        if(store){
+       if(store && segment >= 0){
             this.segmentTable.get(segment).setDirty();
         }
-              
+         
         System.out.println("Accessing Segment "+segment+" and offset "+offset);
         return new MemoryAddress(segment, offset);
     }
     
     public MemoryAddress getPhysicalMemoryAddressFromLogicalMemoryAddress(MemoryAddress m){
         
-        //Include your code here
+         int seg = m.getDivision();
+        int offset = m.getOffset();
         
-        return new MemoryAddress(-1, -1);
+        if (seg < 0 || seg >= segmentTable.size()) {
+            System.out.println("ERROR - Segment out of bounds: " + seg);
+            return new MemoryAddress(-1, -1);
+        }
+        
+        SegmentTableEntry entry = segmentTable.get(seg);
+        
+        if (offset < 0 || offset >= entry.getLimit()) {
+            System.out.println("ERROR - Offset out of bounds: offset=" + offset + " limit=" + entry.getLimit());
+            return new MemoryAddress(-1,-1);
+        }
+        
+        int physicalAddress = entry.getBase() + offset;
+        return new MemoryAddress(physicalAddress, 0);
     }
     
     public SegmentTableEntry getSegment(int i){

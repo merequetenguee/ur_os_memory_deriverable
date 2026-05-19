@@ -5,10 +5,9 @@
 package ur_os.memory.paging;
 
 import ur_os.memory.MemoryAddress;
-import ur_os.memory.ProcessMemoryManager;
 import ur_os.memory.MemoryManagerType;
+import ur_os.memory.ProcessMemoryManager;
 import ur_os.system.OS;
-import ur_os.virtualmemory.ProcessVirtualMemoryManager;
 
 /**
  *
@@ -101,42 +100,43 @@ public class PMM_Paging extends ProcessMemoryManager{
     }
     
     public MemoryAddress getPageMemoryAddressFromLocalAddress(int locAdd){
-        
-        //Include your code here
-        
-        
-        return new MemoryAddress(-1, -1);
+
+        return new MemoryAddress(Math.floorDiv(locAdd,OS.PAGE_SIZE), locAdd % OS.PAGE_SIZE);
     }
     
     public int getFrameMemoryAddressFromLogicalMemoryAddress(int page){
+
         
-        //Include your code here
         
-        return -1;
+        
+        return getFrameMemoryAddressFromLogicalMemoryAddress(new MemoryAddress(page,0)).getDivision();
     }
     
     public MemoryAddress getFrameMemoryAddressFromLogicalMemoryAddress(MemoryAddress m){
         
-        //Include your code here
-        //Return null if the address is not loaded in a frame (just for virtual memory)
-        //Include a memory access to the page that is being accessed and that is loaded
         
-        return new MemoryAddress(-1, -1);
+        //Return null if the address is not loaded in a frame (just for virtual memory)
+        if (!this.pt.isPageValid(m.getDivision()))
+        {
+            return null;
+        }
+        //Include a memory access to the page that is being accessed and that is loaded
+          addMemoryAccess(m.getDivision());
+        
+        int vFrameId = vpt.getFrameIdFromPage(m.getDivision());
+        return new MemoryAddress(vFrameId, m.getOffset());
     }
     
     
     public int getVFrameMemoryAddressFromLogicalMemoryAddress(int page){
         return getVFrameMemoryAddressFromLogicalMemoryAddress(new MemoryAddress(page, 0)).getDivision();
+      
     }
     
-    public MemoryAddress getVFrameMemoryAddressFromLogicalMemoryAddress(MemoryAddress m){
-        
-        //Include your code here
-        
-        return new MemoryAddress(-1, -1);
-    }
-    
+public MemoryAddress getVFrameMemoryAddressFromLogicalMemoryAddress(MemoryAddress m){
+   return new MemoryAddress(vpt.getFrameIdFromPage(m.getDivision()), m.getOffset());
    
+}
     
      @Override
     public String toString(){

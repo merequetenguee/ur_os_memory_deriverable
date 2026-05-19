@@ -60,8 +60,11 @@ public class SystemOS implements Runnable{
         processes = new ArrayList();
         //initSimulationQueue();
         //initSimulationQueueSimple();
-        initSimulationQueueSimpler();
+     //initSimulationQueueSimpler();
         
+       initSimulationQueueVirtualMemoryComparison();
+
+
 
         showProcesses();
         this.simType = simType;
@@ -171,6 +174,8 @@ public class SystemOS implements Runnable{
         clock = 0;
     }
     
+     
+
     public void initSimulationQueueSimpler3(){
         
         
@@ -274,8 +279,7 @@ public class SystemOS implements Runnable{
         
         clock = 0;
     }
-    
-    
+
     
     public boolean isSimulationFinished(){
         
@@ -362,6 +366,7 @@ public class SystemOS implements Runnable{
 
         }
         System.out.println("******SIMULATION FINISHES******");
+         System.out.println("Page Replacement Policy Used: " + OS.PVMM);
         //os.showProcesses();
         
         System.out.println("******Process Execution******");

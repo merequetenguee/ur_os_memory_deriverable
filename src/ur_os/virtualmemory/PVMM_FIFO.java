@@ -6,7 +6,7 @@ package ur_os.virtualmemory;
 
 import java.util.LinkedList;
 import ur_os.memory.paging.PageTable;
-
+import ur_os.memory.paging.PageTableEntry;
 /**
  *
  * @author user
@@ -18,11 +18,23 @@ public class PVMM_FIFO extends ProcessVirtualMemoryManager{
     }
     
     @Override
-    public int getVictim(LinkedList<Integer> memoryAccesses, PageTable pt) {
+ public int getVictim(LinkedList<Integer> memoryAccesses, PageTable pt) {
         
-        //To do
+        int victimPage = -1;
+        int oldestLoadClock = Integer.MAX_VALUE;
+        int pageIndex = 0;
+
+        for (PageTableEntry pte : pt.getList()) {
+            if (pte.isValid()) {
+                if (pte.getClock() < oldestLoadClock) {
+                    oldestLoadClock = pte.getClock();
+                    victimPage = pageIndex;
+                }
+            }
+            pageIndex++;
+        }
+
+        return victimPage;
+    }   
         
-        return -1;
-    }
-    
 }
