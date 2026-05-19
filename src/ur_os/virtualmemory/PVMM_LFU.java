@@ -48,3 +48,6 @@ public class PVMM_LFU extends ProcessVirtualMemoryManager{
         return victim;
     }
 }
+
+
+
