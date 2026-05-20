@@ -358,6 +358,7 @@ public class SystemOS implements Runnable {
 
         }
         System.out.println("******SIMULATION FINISHES******");
+        System.out.println("Page Replacement Policy Used: " + OS.PVMM);
         // os.showProcesses();
 
         System.out.println("******Process Execution******");
