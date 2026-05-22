@@ -117,15 +117,15 @@ public class PMM_Paging extends ProcessMemoryManager{
     }
     
     public MemoryAddress getFrameMemoryAddressFromLogicalMemoryAddress(MemoryAddress m){
-        
-        
+
+
         //Return null if the address is not loaded in a frame (just for virtual memory)
         if (!this.pt.isPageValid(m.getDivision()))
         {
             return null;
         }
         //Include a memory access to the page that is being accessed and that is loaded
-        
+        addMemoryAccess(m.getDivision());
         return new MemoryAddress(this.pt.getFrameIdFromPage(m.getDivision()), m.getOffset());
     }
     
@@ -140,7 +140,7 @@ public class PMM_Paging extends ProcessMemoryManager{
         
         
         
-        int physicalAddress = pt.getFrameIdFromPage(m.getDivision()) * OS.PAGE_SIZE + m.getOffset();
+        int physicalAddress = vpt.getFrameIdFromPage(m.getDivision()) * OS.PAGE_SIZE + m.getOffset();
         return new MemoryAddress(physicalAddress, 0);
     }
     

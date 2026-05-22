@@ -54,13 +54,13 @@ public class OS {
 
     public static final int MAX_PROCESS_PRIORITY = 10; // Page size in bytes
     public static final int PAGE_SIZE = 64; // Page size in bytes
-    public static final MemoryManagerType SMM = MemoryManagerType.SEGMENTATION;
+    public static final MemoryManagerType SMM = MemoryManagerType.PAGING;
     public static final FreeMemorySlotManagerType MSM = FreeMemorySlotManagerType.FLEX_FIT;
 
-    public static final ProcessVirtualMemoryManagerType PVMM = ProcessVirtualMemoryManagerType.LRU;
+    public static final ProcessVirtualMemoryManagerType PVMM = ProcessVirtualMemoryManagerType.FIFO;
     public static final int FRAMES_PER_PROCESS = 3; // Maximum number of frames assigned to a process, if virtual memory
                                                     // is on
-    public static final boolean VIRTUAL_MEMORY_MODE_ON = false; // Maximum number of frames assigned to a process, if
+    public static final boolean VIRTUAL_MEMORY_MODE_ON = true; // Maximum number of frames assigned to a process, if
                                                                 // virtual memory is on
 
     public OS(SystemOS system, CPU cpu, IOQueue ioq) {
