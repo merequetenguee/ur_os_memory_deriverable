@@ -6,6 +6,7 @@ package ur_os.virtualmemory;
 
 import java.util.LinkedList;
 import ur_os.memory.paging.PageTable;
+import ur_os.memory.paging.PageTableEntry;
 
 /**
  *
@@ -41,6 +42,8 @@ public class PVMM_MFU extends ProcessVirtualMemoryManager{
             }
         }
         return victim;
+        
     }
     
 }
+
