@@ -52,13 +52,13 @@ public class OS {
     FreeMemoryManager fvmm;
     Random r;
     boolean lazySwap;
-
+   private int pageFaults = 0;
     public static final int MAX_PROCESS_PRIORITY = 10; // Page size in bytes
     public static final int PAGE_SIZE = 64; // Page size in bytes
     public static final MemoryManagerType SMM = MemoryManagerType.PAGING;
     public static final FreeMemorySlotManagerType MSM = FreeMemorySlotManagerType.FLEX_FIT;
 
-    public static final ProcessVirtualMemoryManagerType PVMM = ProcessVirtualMemoryManagerType.FIFO;
+    public static final ProcessVirtualMemoryManagerType PVMM = ProcessVirtualMemoryManagerType.CLOCK; // Page replacement algorithm for virtual memory, if it is on
     public static final int FRAMES_PER_PROCESS = 3; // Maximum number of frames assigned to a process, if virtual memory
                                                     // is on
     public static final boolean VIRTUAL_MEMORY_MODE_ON = true; // Maximum number of frames assigned to a process, if
@@ -70,6 +70,7 @@ public class OS {
         this.system = system;
         this.cpu = cpu;
         lazySwap = false;// No preloading pages to reduce page faults
+        pageFaults = 0;
 
         if (SMM == MemoryManagerType.PAGING) {
             smm = new SMM_Paging(this);
@@ -347,6 +348,9 @@ public class OS {
             case MRU:
                 p.getPMM().setPVMM(new PVMM_MRU());
                 break;
+            case CLOCK:
+                p.getPMM().setPVMM(new PVMM_CLOCK());
+                break;
 
         }
 
@@ -421,4 +425,13 @@ public class OS {
     public int getClock() {
         return system.getClock();
     }
+
+    public void incrementPageFaults(){
+        pageFaults++;
+    }
+
+    public int getPageFaults(){
+        return pageFaults;
+    }
 }
+
