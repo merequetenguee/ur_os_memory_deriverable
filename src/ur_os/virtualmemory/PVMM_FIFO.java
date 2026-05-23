@@ -21,7 +21,7 @@ public class PVMM_FIFO extends ProcessVirtualMemoryManager{
     @Override
     public int getVictim(LinkedList<Integer> memoryAccesses, PageTable pt) {
         
-         LinkedList<Integer> pages = new LinkedList();
+        LinkedList<Integer> pages = new LinkedList();
         int size = 0; 
         LinkedList<Integer> validListPages = new LinkedList();
         int i = 0;

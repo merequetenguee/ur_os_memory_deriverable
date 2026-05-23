@@ -13,5 +13,6 @@ public enum ProcessVirtualMemoryManagerType {
     LRU, //Least recently used
     MFU, //Most frecuently used
     LFU,//Least frecuently used
-    MRU //Most recently used
+    MRU, //Most recently used
+    CLOCK //Clock / Second Chance
 }

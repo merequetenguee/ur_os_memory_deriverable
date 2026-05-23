@@ -39,7 +39,8 @@ public class SMM_Paging extends SystemMemoryManager{
             //Only valid for Virtual Memory
             if(pa == null){
                 //There was a page fault, so the page needs to be brought to memory from swap
-                
+                 //There was a page fault, so the page needs to be brought to memory from swap
+                getOS().incrementPageFaults();
                 System.out.println("[VM][" + OS.PVMM + "] PAGE FAULT - PID: " + pmmp.getProcess().getPid()
                         + " Requested page: " + la.getDivision());
                 int pageVictim = pmmp.getVictim(); //Find a page that needs to leave memory if there is no space
