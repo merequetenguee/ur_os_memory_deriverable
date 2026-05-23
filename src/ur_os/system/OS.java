@@ -34,6 +34,7 @@ import static ur_os.system.SystemOS.MAX_PROC_SIZE;
 import ur_os.virtualmemory.*;
 import static ur_os.virtualmemory.ProcessVirtualMemoryManagerType.FIFO;
 import static ur_os.virtualmemory.ProcessVirtualMemoryManagerType.LRU;
+import static ur_os.virtualmemory.ProcessVirtualMemoryManagerType.MFU;
 
 /**
  *
@@ -61,7 +62,7 @@ public class OS {
     public static final int FRAMES_PER_PROCESS = 3; // Maximum number of frames assigned to a process, if virtual memory
                                                     // is on
     public static final boolean VIRTUAL_MEMORY_MODE_ON = true; // Maximum number of frames assigned to a process, if
-                                                                // virtual memory is on
+                                                               // virtual memory is on
 
     public OS(SystemOS system, CPU cpu, IOQueue ioq) {
         rq = new ReadyQueue(this);
@@ -342,6 +343,9 @@ public class OS {
 
             case MFU:
                 p.getPMM().setPVMM(new PVMM_MFU());
+                break;
+            case MRU:
+                p.getPMM().setPVMM(new PVMM_MRU());
                 break;
 
         }

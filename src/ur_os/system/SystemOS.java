@@ -7,6 +7,8 @@ package ur_os.system;
 
 import java.util.ArrayList;
 import java.util.Random;
+import ur_os.memory.ProcessMemoryManager;
+import ur_os.memory.paging.PMM_Paging;
 import ur_os.memory.Memory;
 import ur_os.memory.MemoryInstruction;
 import ur_os.memory.MemoryManagerType;
@@ -59,8 +61,8 @@ public class SystemOS implements Runnable {
         processes = new ArrayList();
         // initSimulationQueue();
         // initSimulationQueueSimple();
-        initSimulationQueueSimpler();
-
+        // initSimulationQueueSimpler();
+        initSimulationQueueScenario_D();
         showProcesses();
         this.simType = simType;
     }
@@ -380,6 +382,10 @@ public class SystemOS implements Runnable {
         memory.showNotNullBytes();
 
         showFreeMemory();
+
+        if (OS.SMM == ur_os.memory.MemoryManagerType.PAGING && OS.VIRTUAL_MEMORY_MODE_ON) {
+            showVirtualMemorySummary();
+        }
     }
 
     public void showFreeMemory() {
@@ -390,6 +396,50 @@ public class SystemOS implements Runnable {
             FreeMemorySlotManager msm = (FreeMemorySlotManager) os.fmm;
             System.out.println(msm);
         }
+    }
+
+    public void showVirtualMemorySummary() {
+        System.out.println("\n****** Virtual Memory Summary (" + OS.PVMM + ") ******");
+        System.out.printf("Policy: %-6s | Frames per process: %d | Page size: %d bytes%n",
+                OS.PVMM, OS.FRAMES_PER_PROCESS, OS.PAGE_SIZE);
+        System.out.println("------------------------------------------------------------");
+        System.out.printf("%-6s | %-7s | %-8s | %-5s | %-9s | %s%n",
+                "PID", "Pages", "Faults", "Hits", "Hit Ratio", "Fault Ratio");
+        System.out.println("------------------------------------------------------------");
+
+        int totalFaults = 0;
+        int totalHits = 0;
+
+        for (Process proc : processes) {
+            ProcessMemoryManager pmm = proc.getPMM();
+            if (pmm == null)
+                continue;
+
+            int faults = pmm.getPageFaults();
+            int hits = pmm.getPageHits();
+            int total = pmm.getTotalAccesses();
+            int pages = (pmm instanceof PMM_Paging)
+                    ? ((PMM_Paging) pmm).getVPT().getSize()
+                    : 0;
+
+            double hitRatio = (total > 0) ? (hits * 100.0 / total) : 0.0;
+            double faultRatio = (total > 0) ? (faults * 100.0 / total) : 0.0;
+
+            System.out.printf("%-6d | %-7d | %-8d | %-5d | %8.2f%% | %.2f%%%n",
+                    proc.getPid(), pages, faults, hits, hitRatio, faultRatio);
+
+            totalFaults += faults;
+            totalHits += hits;
+        }
+
+        int grandTotal = totalFaults + totalHits;
+        double totalHitRatio = (grandTotal > 0) ? (totalHits * 100.0 / grandTotal) : 0.0;
+        double totalFaultRatio = (grandTotal > 0) ? (totalFaults * 100.0 / grandTotal) : 0.0;
+
+        System.out.println("------------------------------------------------------------");
+        System.out.printf("%-6s | %-7s | %-8d | %-5d | %8.2f%% | %.2f%%%n",
+                "TOTAL", "-", totalFaults, totalHits, totalHitRatio, totalFaultRatio);
+        System.out.println("************************************************************\n");
     }
 
     public void showProcesses() {
@@ -462,6 +512,127 @@ public class SystemOS implements Runnable {
         }
 
         return tot / processes.size();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario C – David: ref = 0,0,0,1,2,3
+    // pg0 accedida 3x antes del primer fault.
+    //
+    // Con FIFO/LRU/MRU → evictan pg0 (la única en memoryAccesses)
+    // Con LFU → evictan pg1 (freq=0, nunca accedida después de cargarse)
+    // Con MFU → evictan pg0 (freq=3, la más usada)
+    //
+    // Cómo verlo: cambia OS.PVMM entre FIFO y LFU y compara:
+    // [VM][FIFO] Victim selected - page: 0 in frame: X
+    // [VM][LFU] Victim selected - page: 1 in frame: X
+    // ─────────────────────────────────────────────────────────────────────────
+    public void initSimulationQueueScenario_C() {
+        final int PAGE = OS.PAGE_SIZE; // 64 bytes
+        Process p = new Process(0, 0);
+        p.setSize(4 * PAGE); // 4 páginas: pg0-pg3
+
+        p.addCPUInstructions(2);
+
+        // ref=0, ref=0, ref=0: HIT tres veces (pg0 pre-cargada)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=1: FAULT (carga pg1)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 1 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=2: FAULT (carga pg2, frames llenos: pg0,pg1,pg2)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 2 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=3: FAULT → VICTIM NEEDED
+        // FIFO/LRU/MRU: evictan pg0 (la única en memoryAccesses)
+        // LFU: evicta pg1 (freq=0, nunca hit)
+        // MFU: evicta pg0 (freq=3, la más usada)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 3 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(2);
+
+        p.addInstruction(new EndInstruction());
+        processes.add(p);
+        clock = 0;
+    }
+
+    public void initSimulationQueueScenario_D() {
+        final int PAGE = OS.PAGE_SIZE; // 64 bytes
+        Process p = new Process(0, 0);
+        p.setSize(5 * PAGE); // 5 páginas: pg0-pg4
+
+        p.addCPUInstructions(2);
+
+        // ref=0: HIT (pg0 pre-cargada)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=1: FAULT → carga pg1
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 1 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=2: FAULT → carga pg2 (frames llenos: pg0,pg1,pg2)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 2 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=0: HIT (pg0 aún en memoria — usada recientemente)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=3: FAULT → VICTIM NEEDED
+        // FIFO evicta pg0 (primera en history, ignora que fue usada en paso anterior)
+        // LFU evicta pg1 (freq=0, nunca hit después de cargarla)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 3 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=0: con FIFO → FAULT de nuevo (pg0 fue recién evictada!)
+        // con LFU → HIT (pg0 sigue en memoria)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=4: FAULT
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 4 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(2);
+
+        p.addInstruction(new EndInstruction());
+        processes.add(p);
+        clock = 0;
+    }
+
+    public void initSimulationQueueScenario_E() {
+        final int PAGE = OS.PAGE_SIZE; // 64 bytes
+        Process p = new Process(0, 0);
+        p.setSize(4 * PAGE); // 4 páginas
+
+        p.addCPUInstructions(2);
+
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 1 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 1 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 1 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 1 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 2 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 3 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(2);
+
+        p.addInstruction(new EndInstruction());
+        processes.add(p);
+        clock = 0;
     }
 
 }

@@ -22,7 +22,7 @@ public class PVMM_FIFO extends ProcessVirtualMemoryManager{
     public int getVictim(LinkedList<Integer> memoryAccesses, PageTable pt) {
         
          LinkedList<Integer> pages = new LinkedList();
-        int size = 0; // scan from oldest access
+        int size = 0; 
         LinkedList<Integer> validListPages = new LinkedList();
         int i = 0;
         for (PageTableEntry pte : pt.getList()) {

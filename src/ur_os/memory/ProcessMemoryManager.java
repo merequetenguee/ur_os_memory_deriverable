@@ -18,6 +18,8 @@ public abstract class ProcessMemoryManager {
     protected ProcessVirtualMemoryManager pvmm;
     Process p;
     protected LinkedList<Integer> memoryAccesses; //Stores pages or segments accessed by the process
+    protected int pageFaults = 0;  // Total page/segment faults for this process
+    protected int pageHits   = 0;  // Total page/segment hits for this process
 
     public ProcessMemoryManager() {
         this(null,MemoryManagerType.CONTIGUOUS,100);
@@ -56,8 +58,20 @@ public abstract class ProcessMemoryManager {
     }
     
     public void addMemoryAccess(int division){
-        this.memoryAccesses.add(division); //Add the segment/page accessed bu the program
+        this.memoryAccesses.add(division); //Add the segment/page accessed by the program
     }
+
+    /** Called by the System Memory Manager each time a page/segment fault occurs. */
+    public void recordFault() { pageFaults++; }
+
+    /** Called by the System Memory Manager each time a page/segment access is a hit. */
+    public void recordHit()   { pageHits++; }
+
+    public int getPageFaults() { return pageFaults; }
+    public int getPageHits()   { return pageHits; }
+
+    /** Total memory accesses attempted (faults + hits). */
+    public int getTotalAccesses() { return pageFaults + pageHits; }
     
     public MemoryManagerType getType(){
         return type;
