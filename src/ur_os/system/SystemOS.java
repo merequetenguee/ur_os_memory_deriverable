@@ -59,8 +59,8 @@ public class SystemOS implements Runnable {
         processes = new ArrayList();
         // initSimulationQueue();
         // initSimulationQueueSimple();
-        initSimulationQueueSimpler();
-
+       // initSimulationQueueSimpler();
+initSimulationQueueScenario_D();
         showProcesses();
         this.simType = simType;
     }
@@ -463,5 +463,96 @@ public class SystemOS implements Runnable {
 
         return tot / processes.size();
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario C – David: ref = 0,0,0,1,2,3
+    //   pg0 accedida 3x antes del primer fault.
+    //
+    //   Con FIFO/LRU/MRU → evictan pg0 (la única en memoryAccesses)
+    //   Con LFU          → evictan pg1 (freq=0, nunca accedida después de cargarse)
+    //   Con MFU          → evictan pg0 (freq=3, la más usada)
+    //
+    //   Cómo verlo: cambia OS.PVMM entre FIFO y LFU y compara:
+    //     [VM][FIFO] Victim selected - page: 0 in frame: X
+    //     [VM][LFU]  Victim selected - page: 1 in frame: X
+    // ─────────────────────────────────────────────────────────────────────────
+    public void initSimulationQueueScenario_C() {
+        final int PAGE = OS.PAGE_SIZE; // 64 bytes
+        Process p = new Process(0, 0);
+        p.setSize(4 * PAGE); // 4 páginas: pg0-pg3
+
+        p.addCPUInstructions(2);
+
+        // ref=0, ref=0, ref=0: HIT tres veces (pg0 pre-cargada)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=1: FAULT (carga pg1)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 1 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=2: FAULT (carga pg2, frames llenos: pg0,pg1,pg2)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 2 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=3: FAULT → VICTIM NEEDED
+        //   FIFO/LRU/MRU: evictan pg0  (la única en memoryAccesses)
+        //   LFU: evicta pg1             (freq=0, nunca hit)
+        //   MFU: evicta pg0             (freq=3, la más usada)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 3 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(2);
+
+        p.addInstruction(new EndInstruction());
+        processes.add(p);
+        clock = 0;
+    }
+
+    public void initSimulationQueueScenario_D() {
+        final int PAGE = OS.PAGE_SIZE; // 64 bytes
+        Process p = new Process(0, 0);
+        p.setSize(5 * PAGE); // 5 páginas: pg0-pg4
+
+        p.addCPUInstructions(2);
+
+        // ref=0: HIT (pg0 pre-cargada)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=1: FAULT → carga pg1
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 1 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=2: FAULT → carga pg2 (frames llenos: pg0,pg1,pg2)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 2 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=0: HIT (pg0 aún en memoria — usada recientemente)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=3: FAULT → VICTIM NEEDED
+        //   FIFO evicta pg0 (primera en history, ignora que fue usada en paso anterior)
+        //   LFU  evicta pg1 (freq=0, nunca hit después de cargarla)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 3 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=0: con FIFO → FAULT de nuevo (pg0 fue recién evictada!)
+        //        con LFU  → HIT (pg0 sigue en memoria)
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 0 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(1);
+
+        // ref=4: FAULT
+        p.addInstruction(new MemoryInstruction(MemoryOperationType.LOAD, 4 * PAGE, (byte) 0, 2));
+        p.addCPUInstructions(2);
+
+        p.addInstruction(new EndInstruction());
+        processes.add(p);
+        clock = 0;
+    }
+
 
 }

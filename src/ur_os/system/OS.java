@@ -34,6 +34,7 @@ import static ur_os.system.SystemOS.MAX_PROC_SIZE;
 import ur_os.virtualmemory.*;
 import static ur_os.virtualmemory.ProcessVirtualMemoryManagerType.FIFO;
 import static ur_os.virtualmemory.ProcessVirtualMemoryManagerType.LRU;
+import static ur_os.virtualmemory.ProcessVirtualMemoryManagerType.MFU;
 
 /**
  *
@@ -342,6 +343,9 @@ public class OS {
 
             case MFU:
                 p.getPMM().setPVMM(new PVMM_MFU());
+                break;
+            case MRU:
+                p.getPMM().setPVMM(new PVMM_MRU());
                 break;
 
         }
